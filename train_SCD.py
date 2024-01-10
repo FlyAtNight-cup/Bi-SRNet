@@ -13,6 +13,7 @@ working_path = os.path.dirname(os.path.abspath(__file__))
 
 from utils.loss import CrossEntropyLoss2d, weighted_BCE_logits, ChangeSimilarity
 from utils.utils import accuracy, SCDD_eval_all, AverageMeter
+from tqdm import tqdm
 
 #Data and model choose
 ###############################################
@@ -55,9 +56,9 @@ def main():
     #net.load_state_dict(torch.load(args['load_path']), strict=False)
         
     train_set = RS.Data('train', random_flip=True)
-    train_loader = DataLoader(train_set, batch_size=args['train_batch_size'], num_workers=4, shuffle=True)
+    train_loader = DataLoader(train_set, batch_size=args['train_batch_size'], num_workers=0, shuffle=True)
     val_set = RS.Data('val')
-    val_loader = DataLoader(val_set, batch_size=args['val_batch_size'], num_workers=4, shuffle=False)
+    val_loader = DataLoader(val_set, batch_size=args['val_batch_size'], num_workers=0, shuffle=False)
     
     criterion = CrossEntropyLoss2d(ignore_index=0).to(device)
     optimizer = optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), lr=args['lr'], weight_decay=args['weight_decay'], momentum=args['momentum'], nesterov=True)
@@ -86,7 +87,8 @@ def train(train_loader, net, criterion, optimizer, scheduler, val_loader):
         train_sc_loss = AverageMeter()
         
         curr_iter = curr_epoch*len(train_loader)
-        for i, data in enumerate(train_loader):
+        pbar = tqdm(train_loader)
+        for i, data in enumerate(pbar):
             running_iter = curr_iter+i+1
             adjust_lr(optimizer, running_iter, all_iters)
             imgs_A, imgs_B, labels_A, labels_B = data
@@ -166,7 +168,8 @@ def validate(val_loader, net, criterion, curr_epoch):
 
     preds_all = []
     labels_all = []
-    for vi, data in enumerate(val_loader):
+    pbar = tqdm(val_loader)
+    for vi, data in enumerate(pbar):
         imgs_A, imgs_B, labels_A, labels_B = data
         if args['gpu']:
             imgs_A = imgs_A.to(device).float()
