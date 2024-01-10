@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 
-from dice_loss import dice_coeff
+# from dice_loss import dice_coeff
 
 
 def eval_net(net, dataset, gpu=True):
@@ -56,7 +56,7 @@ def eval_net_BCE(net, dataset, gpu=True):
 
         pred = net(img)
         pred_flat = pred.view(-1)
-        labels_flat = labels.view(-1)
+        labels_flat = label.view(-1)
         loss = nn.BCEWithLogitsLoss()
         loss = loss(pred_flat, labels_flat)
 

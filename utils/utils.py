@@ -12,7 +12,7 @@ def read_idtxt(path):
   curr_str = ''
   while True:
       ch = f.read(1)
-      if is_number(ch):
+      if isinstance(ch, int):
           curr_str+=ch
       else:
           id_list.append(curr_str)

@@ -477,7 +477,7 @@ def rescale_image(img, scale=1/8, order=0):
 def random_ResizeCrop(img, label, crop_size='same', ratio_range=(1.0, 2.0)):
     h, w = img.shape[:2]
     if crop_size=='same': crop_size = (h,w)
-    elif isinstance(size, int): crop_size = (crop_size, crop_size)
+    elif isinstance(crop_size, int): crop_size = (crop_size, crop_size)
     scale_ratio = random.uniform(ratio_range[0], ratio_range[1])
     img = rescale_image(img, scale=scale_ratio, order=3)
     label = rescale_image(label, scale=scale_ratio, order=0)
