@@ -14,7 +14,7 @@ def conv3x3(in_planes, out_planes, stride=1):
 class FCN(nn.Module):
     def __init__(self, in_channels=3, pretrained=True):
         super(FCN, self).__init__()
-        resnet = models.resnet34(pretrained)
+        resnet = models.resnet34(weights=models.ResNet34_Weights.DEFAULT) if pretrained else models.resnet34()
         newconv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
         newconv1.weight.data[:, 0:3, :, :].copy_(resnet.conv1.weight.data[:, 0:3, :, :])
         if in_channels>3:

@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 import skimage
 from skimage import transform as sktransf
-from skimage.util import pad
+from numpy import pad
 import matplotlib.pyplot as plt
 
 def showIMG(img):

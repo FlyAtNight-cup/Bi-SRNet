@@ -6,6 +6,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torch.autograd import Variable
+device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+
 
 
 def check_mkdir(dir_name):
@@ -103,8 +105,8 @@ class Conv2dDeformable(nn.Module):
             grid_w = torch.Tensor(grid_w)
             grid_h = torch.Tensor(grid_h)
             if self.cuda:
-                grid_w = grid_w.cuda()
-                grid_h = grid_h.cuda()
+                grid_w = grid_w.to(device)
+                grid_h = grid_h.to(device)
             self.grid_w = nn.Parameter(grid_w)
             self.grid_h = nn.Parameter(grid_h)
         offset_w = offset_w + self.grid_w  # (b*c, h, w)
@@ -127,20 +129,20 @@ def sliced_forward(single_forward):
     def wrapper(self, x):
         batch_size, _, ori_h, ori_w = x.size()
         if self.training and self.use_aux:
-            outputs_all_scales = Variable(torch.zeros((batch_size, self.num_classes, ori_h, ori_w))).cuda()
-            aux_all_scales = Variable(torch.zeros((batch_size, self.num_classes, ori_h, ori_w))).cuda()
+            outputs_all_scales = Variable(torch.zeros((batch_size, self.num_classes, ori_h, ori_w))).to(device)
+            aux_all_scales = Variable(torch.zeros((batch_size, self.num_classes, ori_h, ori_w))).to(device)
             for s in self.scales:
                 new_size = (int(ori_h * s), int(ori_w * s))
                 scaled_x = F.upsample(x, size=new_size, mode='bilinear')
-                scaled_x = Variable(scaled_x).cuda()
+                scaled_x = Variable(scaled_x).to(device)
                 scaled_h, scaled_w = scaled_x.size()[2:]
                 long_size = max(scaled_h, scaled_w)
                 print(scaled_x.size())
 
                 if long_size > self.crop_size:
                     count = torch.zeros((scaled_h, scaled_w))
-                    outputs = Variable(torch.zeros((batch_size, self.num_classes, scaled_h, scaled_w))).cuda()
-                    aux_outputs = Variable(torch.zeros((batch_size, self.num_classes, scaled_h, scaled_w))).cuda()
+                    outputs = Variable(torch.zeros((batch_size, self.num_classes, scaled_h, scaled_w))).to(device)
+                    aux_outputs = Variable(torch.zeros((batch_size, self.num_classes, scaled_h, scaled_w))).to(device)
                     stride = int(ceil(self.crop_size * self.stride_rate))
                     h_step_num = int(ceil((scaled_h - self.crop_size) / stride)) + 1
                     w_step_num = int(ceil((scaled_w - self.crop_size) / stride)) + 1
@@ -165,7 +167,7 @@ def sliced_forward(single_forward):
                             aux_outputs[:, :, sy: ey, sx: ex] = aux_sub
 
                             count[sy: ey, sx: ex] += 1
-                    count = Variable(count).cuda()
+                    count = Variable(count).to(device)
                     outputs = (outputs / count)
                     aux_outputs = (outputs / count)
                 else:
@@ -177,7 +179,7 @@ def sliced_forward(single_forward):
                 aux_all_scales += aux_outputs
             return outputs_all_scales / len(self.scales), aux_all_scales
         else:
-            outputs_all_scales = Variable(torch.zeros((batch_size, self.num_classes, ori_h, ori_w))).cuda()
+            outputs_all_scales = Variable(torch.zeros((batch_size, self.num_classes, ori_h, ori_w))).to(device)
             for s in self.scales:
                 new_size = (int(ori_h * s), int(ori_w * s))
                 scaled_x = F.upsample(x, size=new_size, mode='bilinear')
@@ -186,7 +188,7 @@ def sliced_forward(single_forward):
 
                 if long_size > self.crop_size:
                     count = torch.zeros((scaled_h, scaled_w))
-                    outputs = Variable(torch.zeros((batch_size, self.num_classes, scaled_h, scaled_w))).cuda()
+                    outputs = Variable(torch.zeros((batch_size, self.num_classes, scaled_h, scaled_w))).to(device)
                     stride = int(ceil(self.crop_size * self.stride_rate))
                     h_step_num = int(ceil((scaled_h - self.crop_size) / stride)) + 1
                     w_step_num = int(ceil((scaled_w - self.crop_size) / stride)) + 1
@@ -208,7 +210,7 @@ def sliced_forward(single_forward):
                             outputs[:, :, sy: ey, sx: ex] = outputs_sub
 
                             count[sy: ey, sx: ex] += 1
-                    count = Variable(count).cuda()
+                    count = Variable(count).to(device)
                     outputs = (outputs / count)
                 else:
                     scaled_x, pad_h, pad_w = _pad(scaled_x, self.crop_size)

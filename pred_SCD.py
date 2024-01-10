@@ -11,6 +11,7 @@ from datasets import RS_ST as RS
 #from models.BiSRNet import BiSRNet as Net
 from models.SSCDl import SSCDl as Net
 DATA_NAME = 'ST'
+device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 #################################
 
 class PredOptions():
@@ -55,7 +56,7 @@ def compare_models(model_1, model_2):
 def main():
     begin_time = time.time()
     opt = PredOptions().parse()
-    net = Net(3, RS.num_classes).cuda()
+    net = Net(3, RS.num_classes).to(device)
     net.load_state_dict( torch.load(opt.chkpt_path) )
     net.eval()
     
@@ -89,8 +90,8 @@ def predict(net, pred_set, pred_loader, pred_dir, flip=False, index_map=False, i
     for vi, data in enumerate(pred_loader):
         imgs_A, imgs_B = data
         #imgs = torch.cat([imgs_A, imgs_B], 1)
-        imgs_A = imgs_A.cuda().float()
-        imgs_B = imgs_B.cuda().float()
+        imgs_A = imgs_A.to(device).float()
+        imgs_B = imgs_B.to(device).float()
         mask_name = pred_set.get_mask_name(vi)
         with torch.no_grad(): 
             out_change, outputs_A, outputs_B = net(imgs_A, imgs_B)#,aux
@@ -174,8 +175,8 @@ def predict_direct(net, pred_set, pred_loader, pred_dir, flip=False, index_map=F
     for vi, data in enumerate(pred_loader):
         imgs_A, imgs_B = data
         #imgs = torch.cat([imgs_A, imgs_B], 1)
-        imgs_A = imgs_A.cuda().float()
-        imgs_B = imgs_B.cuda().float()
+        imgs_A = imgs_A.to(device).float()
+        imgs_B = imgs_B.to(device).float()
         mask_name = pred_set.get_mask_name(vi)
         with torch.no_grad(): 
             outputs_A, outputs_B = net(imgs_A, imgs_B)#,aux

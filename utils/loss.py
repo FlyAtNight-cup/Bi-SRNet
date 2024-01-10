@@ -152,8 +152,9 @@ class ChangeSalience(nn.Module):
 
 def pix_loss(output, target, pix_weight, ignore_index=None):
     # Calculate log probabilities
+    device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
     if ignore_index is not None:
-        active_pos = 1-(target==ignore_index).unsqueeze(1).cuda().float()
+        active_pos = 1-(target==ignore_index).unsqueeze(1).to(device).float()
         pix_weight *= active_pos
         
     batch_size, _, H, W = output.size()

@@ -7,7 +7,6 @@ import utils.transform as transform
 import matplotlib.pyplot as plt
 from skimage.transform import rescale
 from torchvision.transforms import functional as F
-# from osgeo import gdal_array
 import cv2
 
 num_classes = 7
@@ -19,7 +18,7 @@ STD_A  = np.array([48.30,  46.27,  48.14])
 MEAN_B = np.array([111.07, 114.04, 118.18])
 STD_B  = np.array([49.41,  47.01,  47.94])
 
-root = '/YOUR_DATA_DIR/'
+root = '/workspaces/second_dataset/'
 
 colormap2label = np.zeros(256 ** 3)
 for i, cm in enumerate(ST_COLORMAP):
@@ -74,38 +73,28 @@ def read_RSimages(mode, rescale=False):
     #label_B_dir = os.path.join(root, mode, 'label2_rgb')
     
     data_list = os.listdir(img_A_dir)
-    imgs_list_A, imgs_list_B, labels_A, labels_B = [], [], [], []
-    count = 0
+    imgs_list_A, imgs_list_B, labels_list_A, labels_list_B = [], [], [], []
     for it in data_list:
-        # print(it)
         if (it[-4:]=='.png'):
             img_A_path = os.path.join(img_A_dir, it)
             img_B_path = os.path.join(img_B_dir, it)
             label_A_path = os.path.join(label_A_dir, it)
             label_B_path = os.path.join(label_B_dir, it)
-            
+          
             imgs_list_A.append(img_A_path)
             imgs_list_B.append(img_B_path)
-            
-            label_A = io.imread(label_A_path)
-            label_B = io.imread(label_B_path)
-            #for rgb labels:
-            #label_A = Color2Index(label_A)
-            #label_B = Color2Index(label_B)
-            labels_A.append(label_A)
-            labels_B.append(label_B)
-        count+=1
-        if not count%500: print('%d/%d images loaded.'%(count, len(data_list)))
+
+            labels_list_A.append(label_A_path)
+            labels_list_B.append(label_B_path)
     
-    print(labels_A[0].shape)
-    print(str(len(imgs_list_A)) + ' ' + mode + ' images' + ' loaded.')
+    # print(str(len(imgs_list_A)) + ' ' + mode + ' images' + ' loaded.')
     
-    return imgs_list_A, imgs_list_B, labels_A, labels_B
+    return imgs_list_A, imgs_list_B, labels_list_A, labels_list_B
 
 class Data(data.Dataset):
     def __init__(self, mode, random_flip = False):
         self.random_flip = random_flip
-        self.imgs_list_A, self.imgs_list_B, self.labels_A, self.labels_B = read_RSimages(mode)
+        self.imgs_list_A, self.imgs_list_B, self.labels_list_A, self.labels_list_B = read_RSimages(mode)
     
     def get_mask_name(self, idx):
         mask_name = os.path.split(self.imgs_list_A[idx])[-1]
@@ -116,8 +105,11 @@ class Data(data.Dataset):
         img_A = normalize_image(img_A, 'A')
         img_B = io.imread(self.imgs_list_B[idx])
         img_B = normalize_image(img_B, 'B')
-        label_A = self.labels_A[idx]
-        label_B = self.labels_B[idx]
+        label_A = io.imread(self.labels_list_A[idx])
+        label_B = io.imread(self.labels_list_B[idx])
+        #for rgb labels:
+        label_A = Color2Index(label_A)
+        label_B = Color2Index(label_B)
         if self.random_flip:
             img_A, img_B, label_A, label_B = transform.rand_rot90_flip_MCD(img_A, img_B, label_A, label_B)
         return F.to_tensor(img_A), F.to_tensor(img_B), torch.from_numpy(label_A), torch.from_numpy(label_B)

@@ -47,9 +47,11 @@ if not os.path.exists(args['log_dir']): os.makedirs(args['log_dir'])
 if not os.path.exists(args['pred_dir']): os.makedirs(args['pred_dir'])
 if not os.path.exists(args['chkpt_dir']): os.makedirs(args['chkpt_dir'])
 writer = SummaryWriter(args['log_dir'])
+device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
-def main():        
-    net = Net(3, num_classes=RS.num_classes).cuda()
+
+def main():
+    net = Net(3, num_classes=RS.num_classes).to(device)
     #net.load_state_dict(torch.load(args['load_path']), strict=False)
         
     train_set = RS.Data('train', random_flip=True)
@@ -57,7 +59,7 @@ def main():
     val_set = RS.Data('val')
     val_loader = DataLoader(val_set, batch_size=args['val_batch_size'], num_workers=4, shuffle=False)
     
-    criterion = CrossEntropyLoss2d(ignore_index=0).cuda()
+    criterion = CrossEntropyLoss2d(ignore_index=0).to(device)
     optimizer = optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), lr=args['lr'], weight_decay=args['weight_decay'], momentum=args['momentum'], nesterov=True)
     scheduler = optim.lr_scheduler.StepLR(optimizer, 1, gamma=0.95, last_epoch=-1)
 
@@ -71,7 +73,7 @@ def train(train_loader, net, criterion, optimizer, scheduler, val_loader):
     bestloss=1.0
     begin_time = time.time()
     all_iters = float(len(train_loader)*args['epochs'])
-    criterion_sc = ChangeSimilarity().cuda()
+    criterion_sc = ChangeSimilarity().to(device)
     curr_epoch=0
     while True:
         torch.cuda.empty_cache()
@@ -89,11 +91,11 @@ def train(train_loader, net, criterion, optimizer, scheduler, val_loader):
             adjust_lr(optimizer, running_iter, all_iters)
             imgs_A, imgs_B, labels_A, labels_B = data
             if args['gpu']:
-                imgs_A = imgs_A.cuda().float()
-                imgs_B = imgs_B.cuda().float()
-                labels_bn = (labels_A>0).unsqueeze(1).cuda().float()
-                labels_A = labels_A.cuda().long()
-                labels_B = labels_B.cuda().long()
+                imgs_A = imgs_A.to(device).float()
+                imgs_B = imgs_B.to(device).float()
+                labels_bn = (labels_A>0).unsqueeze(1).to(device).float()
+                labels_A = labels_A.to(device).long()
+                labels_B = labels_B.to(device).long()
 
             optimizer.zero_grad()
             out_change, outputs_A, outputs_B = net(imgs_A, imgs_B)
@@ -167,10 +169,10 @@ def validate(val_loader, net, criterion, curr_epoch):
     for vi, data in enumerate(val_loader):
         imgs_A, imgs_B, labels_A, labels_B = data
         if args['gpu']:
-            imgs_A = imgs_A.cuda().float()
-            imgs_B = imgs_B.cuda().float()
-            labels_A = labels_A.cuda().long()
-            labels_B = labels_B.cuda().long()
+            imgs_A = imgs_A.to(device).float()
+            imgs_B = imgs_B.to(device).float()
+            labels_A = labels_A.to(device).long()
+            labels_B = labels_B.to(device).long()
 
         with torch.no_grad():
             out_change, outputs_A, outputs_B = net(imgs_A, imgs_B)
