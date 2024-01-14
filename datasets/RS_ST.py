@@ -18,7 +18,7 @@ STD_A  = np.array([48.30,  46.27,  48.14])
 MEAN_B = np.array([111.07, 114.04, 118.18])
 STD_B  = np.array([49.41,  47.01,  47.94])
 
-root = '/workspaces/second_dataset/'
+# root = '/workspaces/second_dataset/'
 
 colormap2label = np.zeros(256 ** 3)
 for i, cm in enumerate(ST_COLORMAP):
@@ -62,7 +62,7 @@ def normalize_images(imgs, time='A'):
         imgs[i] = normalize_image(im, time)
     return imgs
 
-def read_RSimages(mode, rescale=False):
+def read_RSimages(root, mode, rescale=False):
     #assert mode in ['train', 'val', 'test']
     img_A_dir = os.path.join(root, mode, 'im1')
     img_B_dir = os.path.join(root, mode, 'im2')
@@ -92,9 +92,9 @@ def read_RSimages(mode, rescale=False):
     return imgs_list_A, imgs_list_B, labels_list_A, labels_list_B
 
 class Data(data.Dataset):
-    def __init__(self, mode, random_flip = False):
+    def __init__(self, root, mode, random_flip = False):
         self.random_flip = random_flip
-        self.imgs_list_A, self.imgs_list_B, self.labels_list_A, self.labels_list_B = read_RSimages(mode)
+        self.imgs_list_A, self.imgs_list_B, self.labels_list_A, self.labels_list_B = read_RSimages(root, mode)
     
     def get_mask_name(self, idx):
         mask_name = os.path.split(self.imgs_list_A[idx])[-1]

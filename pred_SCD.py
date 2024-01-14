@@ -23,7 +23,7 @@ class PredOptions():
         working_path = os.path.dirname(os.path.abspath(__file__))
         parser.add_argument('--pred_batch_size', required=False, default=1, help='prediction batch size')
         parser.add_argument('--test_dir', required=False, default='/TEST_DIR/', help='directory to test images')
-        parser.add_argument('--pred_dir', required=False, default='/PRED_DIR/'+DATA_DIR, help='directory to output masks')
+        parser.add_argument('--pred_dir', required=False, default='/PRED_DIR/', help='directory to output masks')
         parser.add_argument('--chkpt_path', required=False, default=working_path+'/checkpoints/ST/xxx.pth')
         self.initialized = True
         return parser

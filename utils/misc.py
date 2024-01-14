@@ -133,7 +133,7 @@ def sliced_forward(single_forward):
             aux_all_scales = Variable(torch.zeros((batch_size, self.num_classes, ori_h, ori_w))).to(device)
             for s in self.scales:
                 new_size = (int(ori_h * s), int(ori_w * s))
-                scaled_x = F.upsample(x, size=new_size, mode='bilinear')
+                scaled_x = F.interpolate(x, size=new_size, mode='bilinear')
                 scaled_x = Variable(scaled_x).to(device)
                 scaled_h, scaled_w = scaled_x.size()[2:]
                 long_size = max(scaled_h, scaled_w)
@@ -182,7 +182,7 @@ def sliced_forward(single_forward):
             outputs_all_scales = Variable(torch.zeros((batch_size, self.num_classes, ori_h, ori_w))).to(device)
             for s in self.scales:
                 new_size = (int(ori_h * s), int(ori_w * s))
-                scaled_x = F.upsample(x, size=new_size, mode='bilinear')
+                scaled_x = F.interpolate(x, size=new_size, mode='bilinear')
                 scaled_h, scaled_w = scaled_x.size()[2:]
                 long_size = max(scaled_h, scaled_w)
 

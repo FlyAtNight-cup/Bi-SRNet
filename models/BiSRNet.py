@@ -220,4 +220,4 @@ class BiSRNet(nn.Module):
         out1 = self.classifier1(x1)
         out2 = self.classifier2(x2)        
         
-        return F.upsample(change, x_size[2:], mode='bilinear'), F.upsample(out1, x_size[2:], mode='bilinear'), F.upsample(out2, x_size[2:], mode='bilinear')
+        return F.interpolate(change, x_size[2:], mode='bilinear'), F.interpolate(out1, x_size[2:], mode='bilinear'), F.interpolate(out2, x_size[2:], mode='bilinear')
