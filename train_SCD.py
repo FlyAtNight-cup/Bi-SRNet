@@ -254,5 +254,5 @@ def adjust_lr(optimizer, curr_iter, all_iter, init_lr=args['lr']):
         param_group['lr'] = running_lr
         
 if __name__ == '__main__':
-    wandb.init(project='BiSR-Net', name="exp_V2", config=args.__dict__)
+    wandb.init(project='BiSR-Net', name="exp_V2", config=args)
     main()
