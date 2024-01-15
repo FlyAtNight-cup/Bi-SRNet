@@ -14,6 +14,7 @@ working_path = os.path.dirname(os.path.abspath(__file__))
 from utils.loss import CrossEntropyLoss2d, weighted_BCE_logits, ChangeSimilarity
 from utils.utils import accuracy, SCDD_eval_all, AverageMeter
 from tqdm import tqdm
+import wandb
 
 #Data and model choose
 ###############################################
@@ -30,7 +31,7 @@ args = {
     'train_batch_size': 8,
     'val_batch_size': 8,
     'lr': 0.1,
-    'epochs': 50,
+    'epochs': 100,
     'gpu': True,
     'lr_decay_power': 1.5,
     'weight_decay': 5e-4,
@@ -55,9 +56,9 @@ def main():
     net = Net(3, num_classes=RS.num_classes).to(device)
     #net.load_state_dict(torch.load(args['load_path']), strict=False)
         
-    train_set = RS.Data('train', random_flip=True)
+    train_set = RS.Data('/root/remote_sensing/secend_dataset', 'train', random_flip=True)
     train_loader = DataLoader(train_set, batch_size=args['train_batch_size'], num_workers=0, shuffle=True)
-    val_set = RS.Data('val')
+    val_set = RS.Data('/root/remote_sensing/secend_dataset', 'val')
     val_loader = DataLoader(val_set, batch_size=args['val_batch_size'], num_workers=0, shuffle=False)
     
     criterion = CrossEntropyLoss2d(ignore_index=0).to(device)
@@ -138,10 +139,16 @@ def train(train_loader, net, criterion, optimizer, scheduler, val_loader):
                 print('[epoch %d] [iter %d / %d %.1fs] [lr %f] [train seg_loss %.4f bn_loss %.4f acc %.2f]' % (
                     curr_epoch, i + 1, len(train_loader), curr_time, optimizer.param_groups[0]['lr'],
                     train_seg_loss.val, train_bn_loss.val, acc_meter.val*100)) #sc_loss %.4f, train_sc_loss.val, 
-                writer.add_scalar('train seg_loss', train_seg_loss.val, running_iter)
-                writer.add_scalar('train sc_loss', train_sc_loss.val, running_iter)
-                writer.add_scalar('train accuracy', acc_meter.val, running_iter)
-                writer.add_scalar('lr', optimizer.param_groups[0]['lr'], running_iter)
+                # writer.add_scalar('train seg_loss', train_seg_loss.val, running_iter)
+                # writer.add_scalar('train sc_loss', train_sc_loss.val, running_iter)
+                # writer.add_scalar('train accuracy', acc_meter.val, running_iter)
+                # writer.add_scalar('lr', optimizer.param_groups[0]['lr'], running_iter)
+                wandb.log({
+                    "train/seg_loss": float(train_seg_loss.val),
+                    "train/sc_loss": float(train_sc_loss.val),
+                    "train/accuracy": float(acc_meter.val),
+                    "lr": optimizer.param_groups[0]['lr']
+                })
                     
         Fscd_v, mIoU_v, Sek_v, acc_v, loss_v = validate(val_loader, net, criterion, curr_epoch)
         if acc_meter.avg>bestaccT: bestaccT=acc_meter.avg
@@ -206,8 +213,12 @@ def validate(val_loader, net, criterion, curr_epoch):
         if curr_epoch%args['predict_step']==0 and vi==0:
             pred_A_color = RS.Index2Color(preds_A[0])
             pred_B_color = RS.Index2Color(preds_B[0])
-            io.imsave(os.path.join(args['pred_dir'], NET_NAME+'_A.png'), pred_A_color)
-            io.imsave(os.path.join(args['pred_dir'], NET_NAME+'_B.png'), pred_B_color)
+            # io.imsave(os.path.join(args['pred_dir'], NET_NAME+'_A.png'), pred_A_color)
+            # io.imsave(os.path.join(args['pred_dir'], NET_NAME+'_B.png'), pred_B_color)
+            wandb.log({
+                "pred/image_A": wandb.Image(pred_A_color, caption=f'BiSR-Net_A_{curr_epoch}.png'),
+                "pred/image_B": wandb.Image(pred_B_color, caption=f'BiSR-Net_B_{curr_epoch}.png')
+            })
             print('Prediction saved!')
     
     Fscd, IoU_mean, Sek = SCDD_eval_all(preds_all, labels_all, RS.num_classes)
@@ -216,9 +227,15 @@ def validate(val_loader, net, criterion, curr_epoch):
     print('%.1fs Val loss: %.2f Fscd: %.2f IoU: %.2f Sek: %.2f Accuracy: %.2f'\
     %(curr_time, val_loss.average(), Fscd*100, IoU_mean*100, Sek*100, acc_meter.average()*100))
 
-    writer.add_scalar('val_loss', val_loss.average(), curr_epoch)
-    writer.add_scalar('val_Fscd', Fscd, curr_epoch)
-    writer.add_scalar('val_Accuracy', acc_meter.average(), curr_epoch)
+    # writer.add_scalar('val_loss', val_loss.average(), curr_epoch)
+    # writer.add_scalar('val_Fscd', Fscd, curr_epoch)
+    # writer.add_scalar('val_Accuracy', acc_meter.average(), curr_epoch)
+    
+    wandb.log({
+        "val/loss": val_loss.average(),
+        "val/Fscd": Fscd,
+        "val/Accuracy": acc_meter.average()
+    })
 
     return Fscd, IoU_mean, Sek, acc_meter.avg, val_loss.avg
 
@@ -237,4 +254,5 @@ def adjust_lr(optimizer, curr_iter, all_iter, init_lr=args['lr']):
         param_group['lr'] = running_lr
         
 if __name__ == '__main__':
+    wandb.init(project='BiSR-Net', name="exp_V2", config=args.__dict__)
     main()
