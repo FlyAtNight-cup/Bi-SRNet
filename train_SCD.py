@@ -56,9 +56,9 @@ def main():
     net = Net(3, num_classes=RS.num_classes).to(device)
     #net.load_state_dict(torch.load(args['load_path']), strict=False)
         
-    train_set = RS.Data('/root/remote_sensing/secend_dataset', 'train', random_flip=True)
+    train_set = RS.Data('/root/remote_sensing/second_dataset', 'train', random_flip=True)
     train_loader = DataLoader(train_set, batch_size=args['train_batch_size'], num_workers=0, shuffle=True)
-    val_set = RS.Data('/root/remote_sensing/secend_dataset', 'val')
+    val_set = RS.Data('/root/remote_sensing/second_dataset', 'val')
     val_loader = DataLoader(val_set, batch_size=args['val_batch_size'], num_workers=0, shuffle=False)
     
     criterion = CrossEntropyLoss2d(ignore_index=0).to(device)
